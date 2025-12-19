@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
 import type { IProviderFactory } from '../providers/interfaces.js';
@@ -55,7 +54,7 @@ function createErrorResponseContent(
 export function createMcpServer(
   providers: IProviderFactory,
   config?: Partial<ServerConfig>
-): { server: McpServer; start: () => Promise<void> } {
+): McpServer {
   const serverConfig = {
     name: config?.name ?? 'command-execution-mcp',
     version: config?.version ?? '1.0.0',
@@ -288,19 +287,10 @@ export function createMcpServer(
     }
   );
 
-  // 서버 시작 함수
-  const start = async (): Promise<void> => {
-    const transport = new StdioServerTransport();
+  log.info('MCP server created', {
+    name: serverConfig.name,
+    version: serverConfig.version,
+  });
 
-    log.info('Starting MCP server', {
-      name: serverConfig.name,
-      version: serverConfig.version,
-    });
-
-    await server.connect(transport);
-
-    log.info('MCP server started');
-  };
-
-  return { server, start };
+  return server;
 }

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: command-execution-mcp
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/http.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
