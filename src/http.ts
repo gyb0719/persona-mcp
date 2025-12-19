@@ -64,11 +64,8 @@ app.post('/mcp', async (req, res) => {
     if (!transport) {
       const server = createMcpServer();
       transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => sessionId,
+        sessionIdGenerator: undefined, // Stateless mode
         enableJsonResponse: true,
-        onsessioninitialized: (id) => {
-          logger.info('Session initialized', { sessionId: id });
-        },
       });
 
       await server.connect(transport);
