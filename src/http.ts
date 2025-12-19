@@ -28,6 +28,14 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/mcp', async (req, res) => {
+  // PlayMCP 호환: Accept 헤더 강제 설정
+  req.headers['accept'] = 'application/json, text/event-stream';
+  (req as unknown as { rawHeaders: string[] }).rawHeaders =
+    (req as unknown as { rawHeaders: string[] }).rawHeaders.filter((_, i, arr) =>
+      arr[i - 1]?.toLowerCase() !== 'accept'
+    );
+  (req as unknown as { rawHeaders: string[] }).rawHeaders.push('Accept', 'application/json, text/event-stream');
+
   try {
     const sessionId = req.headers['x-session-id'] as string || randomUUID();
 
