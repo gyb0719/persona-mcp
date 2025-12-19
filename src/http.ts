@@ -8,6 +8,14 @@ import { storage, InMemoryStorage } from './storage/index.js';
 const app = express();
 app.use(express.json());
 
+// Accept 헤더 자동 추가 미들웨어 (PlayMCP 호환)
+app.use('/mcp', (req, _res, next) => {
+  if (!req.headers.accept || !req.headers.accept.includes('text/event-stream')) {
+    req.headers.accept = 'application/json, text/event-stream';
+  }
+  next();
+});
+
 const sessions = new Map<string, StreamableHTTPServerTransport>();
 
 app.get('/health', (_req, res) => {
