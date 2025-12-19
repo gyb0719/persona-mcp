@@ -6,6 +6,20 @@ import { logger } from './core/logger.js';
 import { storage, InMemoryStorage } from './storage/index.js';
 
 const app = express();
+
+// CORS 설정
+app.use((_req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, x-session-id, Mcp-Session-Id');
+  res.header('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+  next();
+});
+
+app.options('*', (_req, res) => {
+  res.sendStatus(200);
+});
+
 app.use(express.json());
 
 // Accept 헤더 자동 추가 미들웨어 (PlayMCP 호환)
