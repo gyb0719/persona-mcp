@@ -37,6 +37,7 @@ app.post('/mcp', async (req, res) => {
       const server = createMcpServer();
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => sessionId,
+        enableJsonResponse: true,
         onsessioninitialized: (id) => {
           logger.info('Session initialized', { sessionId: id });
         },
