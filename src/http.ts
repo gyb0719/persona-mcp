@@ -30,11 +30,17 @@ app.get('/health', (_req, res) => {
 app.post('/mcp', async (req, res) => {
   // PlayMCP 호환: Accept 헤더 강제 설정
   req.headers['accept'] = 'application/json, text/event-stream';
-  (req as unknown as { rawHeaders: string[] }).rawHeaders =
-    (req as unknown as { rawHeaders: string[] }).rawHeaders.filter((_, i, arr) =>
-      arr[i - 1]?.toLowerCase() !== 'accept'
-    );
-  (req as unknown as { rawHeaders: string[] }).rawHeaders.push('Accept', 'application/json, text/event-stream');
+
+  // rawHeaders에서 기존 Accept 제거 후 새로 추가
+  const rawHeaders = (req as unknown as { rawHeaders: string[] }).rawHeaders;
+  const newRawHeaders: string[] = [];
+  for (let i = 0; i < rawHeaders.length; i += 2) {
+    if (rawHeaders[i].toLowerCase() !== 'accept') {
+      newRawHeaders.push(rawHeaders[i], rawHeaders[i + 1]);
+    }
+  }
+  newRawHeaders.push('Accept', 'application/json, text/event-stream');
+  (req as unknown as { rawHeaders: string[] }).rawHeaders = newRawHeaders;
 
   try {
     const sessionId = req.headers['x-session-id'] as string || randomUUID();
