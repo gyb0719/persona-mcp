@@ -1,84 +1,58 @@
-import type { ExecutionResult } from './types.js';
-
-/**
- * 에러 코드 상수
- */
-export const ErrorCodes = {
-  // 검증 에러 (4xx)
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  INVALID_TARGET: 'INVALID_TARGET',
-  INVALID_TIME: 'INVALID_TIME',
-  PAST_TIME: 'PAST_TIME',
-  END_BEFORE_START: 'END_BEFORE_START',
-  DURATION_TOO_LONG: 'DURATION_TOO_LONG',
-  MESSAGE_TOO_LONG: 'MESSAGE_TOO_LONG',
-  MESSAGE_EMPTY: 'MESSAGE_EMPTY',
-  DUPLICATE_SCHEDULE: 'DUPLICATE_SCHEDULE',
-
-  // Rate Limit 에러
-  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-
-  // 실행 에러 (5xx)
-  EXECUTION_FAILED: 'EXECUTION_FAILED',
-  PROVIDER_ERROR: 'PROVIDER_ERROR',
-  TIMEOUT: 'TIMEOUT',
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
-} as const;
-
-export type ErrorCode = keyof typeof ErrorCodes;
-
-/**
- * MCP Tool 에러 클래스
- */
-export class McpToolError extends Error {
-  public readonly code: ErrorCode;
-  public readonly details?: Record<string, unknown>;
-
-  constructor(code: ErrorCode, message: string, details?: Record<string, unknown>) {
+export class PersonaMcpError extends Error {
+  constructor(
+    message: string,
+    public readonly code: ErrorCode,
+    public readonly details?: Record<string, unknown>
+  ) {
     super(message);
-    this.name = 'McpToolError';
-    this.code = code;
-    this.details = details;
-  }
-
-  /**
-   * ExecutionResult 형식으로 변환
-   */
-  toResponse(): ExecutionResult {
-    return {
-      status: 'failed',
-      error: this.code,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * JSON 직렬화를 위한 메서드
-   */
-  toJSON(): Record<string, unknown> {
-    return {
-      name: this.name,
-      code: this.code,
-      message: this.message,
-      details: this.details,
-    };
+    this.name = 'PersonaMcpError';
   }
 }
 
-/**
- * 에러 응답 생성 헬퍼
- */
-export function createErrorResponse(code: ErrorCode): ExecutionResult {
-  return {
-    status: 'failed',
-    error: code,
-    timestamp: new Date().toISOString(),
-  };
+export type ErrorCode =
+  | 'CHARACTER_NOT_FOUND'
+  | 'SESSION_NOT_FOUND'
+  | 'TEMPLATE_NOT_FOUND'
+  | 'INVALID_INPUT'
+  | 'STORAGE_ERROR'
+  | 'INTERNAL_ERROR';
+
+export class CharacterNotFoundError extends PersonaMcpError {
+  constructor(characterId: string) {
+    super(
+      `Character not found: ${characterId}`,
+      'CHARACTER_NOT_FOUND',
+      { characterId }
+    );
+  }
 }
 
-/**
- * 에러인지 확인하는 타입 가드
- */
-export function isMcpToolError(error: unknown): error is McpToolError {
-  return error instanceof McpToolError;
+export class SessionNotFoundError extends PersonaMcpError {
+  constructor(sessionId: string) {
+    super(
+      `Session not found: ${sessionId}`,
+      'SESSION_NOT_FOUND',
+      { sessionId }
+    );
+  }
+}
+
+export class TemplateNotFoundError extends PersonaMcpError {
+  constructor(templateId: string) {
+    super(
+      `Template not found: ${templateId}`,
+      'TEMPLATE_NOT_FOUND',
+      { templateId }
+    );
+  }
+}
+
+export class InvalidInputError extends PersonaMcpError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'INVALID_INPUT', details);
+  }
+}
+
+export function isPersonaMcpError(error: unknown): error is PersonaMcpError {
+  return error instanceof PersonaMcpError;
 }

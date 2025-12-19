@@ -1,107 +1,142 @@
-/**
- * 실행 상태 타입
- */
-export type ExecutionStatus =
-  | 'sent'
-  | 'scheduled'
-  | 'created'
-  | 'requires_confirmation'
-  | 'failed';
+export interface Character {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  personality: string;
+  scenario?: string;
+  firstMessage: string;
+  exampleDialogue?: string;
+  createdAt: string;
+  templateId?: string;
+}
 
-/**
- * 대상 타입
- */
-export type TargetType = 'user' | 'group';
+export interface Template {
+  id: string;
+  name: string;
+  category: TemplateCategory;
+  emoji: string;
+  description: string;
+  personality: string;
+  scenario: string;
+  firstMessage: string;
+  exampleDialogue: string;
+}
 
-/**
- * 공통 실행 결과
- */
-export interface ExecutionResult {
-  status: ExecutionStatus;
-  executionId?: string;
-  jobId?: string;
-  eventId?: string;
+export type TemplateCategory =
+  | 'supernatural'
+  | 'regression'
+  | 'mystery'
+  | 'mythology'
+  | 'healing';
+
+export interface Memory {
+  id: string;
+  sessionId: string;
+  key: string;
+  value: string;
+  importance: number;
+  createdAt: string;
+}
+
+export interface Session {
+  id: string;
+  userId: string;
+  characterId: string;
+  character: Character;
+  memories: Memory[];
+  conversationHistory: ConversationTurn[];
+  startedAt: string;
+  lastActiveAt: string;
+}
+
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface ListCharactersInput {
+  userId: string;
+}
+
+export interface ListCharactersOutput {
+  templates: TemplatePreview[];
+  characters: Character[];
+  timestamp: string;
+}
+
+export interface TemplatePreview {
+  id: string;
+  name: string;
+  emoji: string;
+  category: TemplateCategory;
+  preview: string;
+}
+
+export interface CreateCharacterInput {
+  userId: string;
+  templateId?: string;
+  customName?: string;
+  name?: string;
+  description?: string;
+  personality?: string;
+  scenario?: string;
+  firstMessage?: string;
+  exampleDialogue?: string;
+}
+
+export interface CreateCharacterOutput {
+  status: 'created' | 'failed';
+  characterId?: string;
+  character?: Character;
   error?: string;
   timestamp: string;
 }
 
-/**
- * 알림 요청
- */
-export interface NotificationRequest {
-  targetType: TargetType;
-  targetId: string;
-  message: string;
-  confirm: boolean;
+export interface GetCharacterInput {
+  userId: string;
+  characterId: string;
 }
 
-/**
- * 스케줄 요청
- */
-export interface ScheduleRequest extends NotificationRequest {
-  executeAt: string;
-  idempotencyKey: string;
+export interface GetCharacterOutput {
+  status: 'found' | 'not_found';
+  character?: Character;
+  timestamp: string;
 }
 
-/**
- * 이벤트 요청
- */
-export interface EventRequest {
-  title: string;
-  startAt: string;
-  endAt: string;
-  description?: string;
-  confirm: boolean;
+export interface StartRoleplayInput {
+  userId: string;
+  characterId: string;
 }
 
-/**
- * Rate Limit 설정
- */
-export interface RateLimitConfig {
-  maxRequests: number;
-  windowMs: number;
-}
-
-/**
- * Rate Limit 체크 결과
- */
-export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetAt: number;
-}
-
-/**
- * 스케줄된 작업
- */
-export interface ScheduledJob {
-  id: string;
-  idempotencyKey: string;
-  executeAt: Date;
-  request: NotificationRequest;
-  status: 'pending' | 'executed' | 'failed';
-  createdAt: Date;
-  executedAt?: Date;
+export interface StartRoleplayOutput {
+  status: 'started' | 'failed';
+  sessionId?: string;
+  greeting?: string;
+  context?: RoleplayContext;
   error?: string;
+  timestamp: string;
 }
 
-/**
- * 로그 레벨
- */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-/**
- * MCP Tool 응답 콘텐츠
- */
-export interface ToolContent {
-  type: 'text';
-  text: string;
+export interface ContinueRoleplayInput {
+  userId: string;
+  sessionId: string;
+  userMessage: string;
+  aiResponse?: string;
 }
 
-/**
- * MCP Tool 응답
- */
-export interface ToolResponse {
-  content: ToolContent[];
-  isError?: boolean;
+export interface ContinueRoleplayOutput {
+  status: 'continued' | 'failed';
+  context?: RoleplayContext;
+  extractedMemory?: string;
+  error?: string;
+  timestamp: string;
+}
+
+export interface RoleplayContext {
+  character: Character;
+  memories: Memory[];
+  systemPrompt: string;
+  recentHistory: ConversationTurn[];
 }

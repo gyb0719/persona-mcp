@@ -1,106 +1,80 @@
-import type { LogLevel } from './types.js';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-const LOG_LEVELS: Record<LogLevel, number> = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-};
-
-/**
- * Logger 설정
- */
-interface LoggerConfig {
+interface LogEntry {
   level: LogLevel;
-  prefix?: string;
+  message: string;
+  timestamp: string;
+  data?: Record<string, unknown>;
 }
 
-/**
- * 간단한 Logger 클래스
- *
- * MCP Server는 stdout을 프로토콜 통신에 사용하므로,
- * 로그는 stderr로 출력합니다.
- */
-export class Logger {
-  private readonly level: number;
-  private readonly prefix: string;
+class Logger {
+  private level: LogLevel;
+  private readonly levels: Record<LogLevel, number> = {
+    debug: 0,
+    info: 1,
+    warn: 2,
+    error: 3,
+  };
 
-  constructor(config: LoggerConfig) {
-    this.level = LOG_LEVELS[config.level];
-    this.prefix = config.prefix ?? 'MCP';
+  constructor() {
+    this.level = (process.env.LOG_LEVEL as LogLevel) || 'info';
   }
 
   private shouldLog(level: LogLevel): boolean {
-    return LOG_LEVELS[level] >= this.level;
+    return this.levels[level] >= this.levels[this.level];
   }
 
-  private formatMessage(level: LogLevel, message: string, data?: unknown): string {
-    const timestamp = new Date().toISOString();
-    const levelStr = level.toUpperCase().padEnd(5);
-    const baseMessage = `[${timestamp}] [${levelStr}] [${this.prefix}] ${message}`;
-
-    if (data !== undefined) {
-      try {
-        const dataStr = JSON.stringify(data);
-        return `${baseMessage} ${dataStr}`;
-      } catch {
-        return `${baseMessage} [Unstringifiable data]`;
-      }
+  private formatLog(entry: LogEntry): string {
+    const base = `[${entry.timestamp}] [${entry.level.toUpperCase()}] ${entry.message}`;
+    if (entry.data) {
+      return `${base} ${JSON.stringify(entry.data)}`;
     }
-
-    return baseMessage;
+    return base;
   }
 
-  debug(message: string, data?: unknown): void {
-    if (this.shouldLog('debug')) {
-      console.error(this.formatMessage('debug', message, data));
-    }
-  }
+  private log(level: LogLevel, message: string, data?: Record<string, unknown>): void {
+    if (!this.shouldLog(level)) return;
 
-  info(message: string, data?: unknown): void {
-    if (this.shouldLog('info')) {
-      console.error(this.formatMessage('info', message, data));
-    }
-  }
+    const entry: LogEntry = {
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      data,
+    };
 
-  warn(message: string, data?: unknown): void {
-    if (this.shouldLog('warn')) {
-      console.error(this.formatMessage('warn', message, data));
+    const formatted = this.formatLog(entry);
+
+    switch (level) {
+      case 'error':
+        console.error(formatted);
+        break;
+      case 'warn':
+        console.warn(formatted);
+        break;
+      default:
+        console.error(formatted);
     }
   }
 
-  error(message: string, data?: unknown): void {
-    if (this.shouldLog('error')) {
-      console.error(this.formatMessage('error', message, data));
-    }
+  debug(message: string, data?: Record<string, unknown>): void {
+    this.log('debug', message, data);
   }
 
-  /**
-   * 자식 Logger 생성 (다른 prefix)
-   */
-  child(prefix: string): Logger {
-    return new Logger({
-      level: Object.entries(LOG_LEVELS).find(([_, v]) => v === this.level)?.[0] as LogLevel,
-      prefix: `${this.prefix}:${prefix}`,
-    });
+  info(message: string, data?: Record<string, unknown>): void {
+    this.log('info', message, data);
+  }
+
+  warn(message: string, data?: Record<string, unknown>): void {
+    this.log('warn', message, data);
+  }
+
+  error(message: string, data?: Record<string, unknown>): void {
+    this.log('error', message, data);
+  }
+
+  setLevel(level: LogLevel): void {
+    this.level = level;
   }
 }
 
-/**
- * 환경 변수에서 로그 레벨 읽기
- */
-function getLogLevel(): LogLevel {
-  const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-  if (envLevel && envLevel in LOG_LEVELS) {
-    return envLevel as LogLevel;
-  }
-  return 'info';
-}
-
-/**
- * 기본 Logger 인스턴스
- */
-export const logger = new Logger({
-  level: getLogLevel(),
-  prefix: 'CommandExecMCP',
-});
+export const logger = new Logger();

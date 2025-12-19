@@ -1,15 +1,19 @@
-// Tool Definitions
-export { sendNotificationTool, handleSendNotification } from './sendNotification.js';
-export { scheduleNotificationTool, handleScheduleNotification } from './scheduleNotification.js';
-export { summarizeAndExecuteTool, handleSummarizeAndExecute } from './summarizeAndExecute.js';
-export { createEventTool, handleCreateEvent } from './createEvent.js';
+export { listCharactersTool, listCharacters } from './listCharacters.js';
+export { createCharacterTool, createCharacter } from './createCharacter.js';
+export { getCharacterTool, getCharacter } from './getCharacter.js';
+export { startRoleplayTool, startRoleplay } from './startRoleplay.js';
+export { continueRoleplayTool, continueRoleplay } from './continueRoleplay.js';
 
-// All Tools
+import { listCharactersTool } from './listCharacters.js';
+import { createCharacterTool } from './createCharacter.js';
+import { getCharacterTool } from './getCharacter.js';
+import { startRoleplayTool } from './startRoleplay.js';
+import { continueRoleplayTool } from './continueRoleplay.js';
+
 export const allTools = [
-  'send_notification',
-  'schedule_notification',
-  'summarize_and_execute',
-  'create_event',
-] as const;
-
-export type ToolName = (typeof allTools)[number];
+  listCharactersTool,
+  createCharacterTool,
+  getCharacterTool,
+  startRoleplayTool,
+  continueRoleplayTool,
+];
