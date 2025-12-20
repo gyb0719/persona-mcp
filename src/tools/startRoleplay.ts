@@ -5,8 +5,10 @@ import type {
   StartRoleplayOutput,
   Session,
   RoleplayContext,
+  Character,
 } from '../core/types.js';
 import { storage } from '../storage/index.js';
+import { getTemplateById } from '../templates/defaultTemplates.js';
 
 export const startRoleplaySchema = z.object({
   userId: z.string().min(1, 'userId is required'),
@@ -44,14 +46,34 @@ export async function startRoleplay(
   const timestamp = new Date().toISOString();
 
   try {
-    const character = await storage.getCharacter(input.userId, input.characterId);
+    let character = await storage.getCharacter(input.userId, input.characterId);
 
+    // 캐릭터를 찾지 못하면 템플릿 ID인지 확인하고 자동 생성
     if (!character) {
-      return {
-        status: 'failed',
-        error: `Character not found: ${input.characterId}`,
-        timestamp,
-      };
+      const template = getTemplateById(input.characterId);
+      if (template) {
+        const newCharacterId = uuidv4();
+        const newCharacter: Character = {
+          id: newCharacterId,
+          userId: input.userId,
+          name: template.name,
+          description: template.description,
+          personality: template.personality,
+          scenario: template.scenario,
+          firstMessage: template.firstMessage,
+          exampleDialogue: template.exampleDialogue,
+          createdAt: timestamp,
+          templateId: template.id,
+        };
+        await storage.saveCharacter(newCharacter);
+        character = newCharacter;
+      } else {
+        return {
+          status: 'failed',
+          error: `Character not found: ${input.characterId}`,
+          timestamp,
+        };
+      }
     }
 
     const sessionId = uuidv4();
